@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useParams, useHistory } from "react-router-dom";
 import axios from "axios";
 
@@ -6,51 +6,49 @@ const initialMovie = {
     id: 0,
     title: "",
     director: "",
-    metascore: 0,
+    metascore: "",
     stars: []
 }
 
-const UpdateForm = props => {
+const AddMovie = props => {
     const [movie, setMovie] = useState(initialMovie);
-    const [stars, setStars] = useState(movie.stars);
+    const [stars, setStars] = useState("");
     const { id } = useParams();
     const { push } = useHistory();
 
-    useEffect(() => {
-        axios.get(`http://localhost:5000/api/movies/${id}`)
-          .then(res => {
-            setMovie(res.data);
-          })
-          .catch(err => console.log(err));
-    }, [])
-
     const changeHandler = e => {
-        setMovie({
+        
+        if(e.target.name !== 'stars'){
+            setMovie({
                 ...movie,
                 [e.target.name]: e.target.value
-        });
+              });
+        }else{
+            setStars(e.target.value)
+            setMovie({
+                ...movie,
+                [e.target.name]: stars.split(",").map(function(item) {
+                    return item.trim();
+                })
+              });
+        }
     };
 
     const handleSubmit = e => {
         e.preventDefault();
         // Axios PUT request here (PUT = update)
-        axios.put(`http://localhost:5000/api/movies/${id}`, movie)
+        axios.post(`http://localhost:5000/api/movies`, movie)
           .then(res => {
-            props.setMovieList(props.movieList.map(movieList => {
-                if(movieList.id === res.data.id){
-                    return res.data
-                }else{
-                    return movieList
-                }
-            }));
-            push(`/movies/${id}`);
+            props.getMovieList();
+            setMovie(initialMovie);
+            push(`/`);
           })
           .catch(err => console.log(err));
     };
 
     return (
         <div>
-          <h2>Update Movie</h2>
+          <h2>Add Movie</h2>
           <form onSubmit={handleSubmit}>
             <input
               type="string"
@@ -79,10 +77,17 @@ const UpdateForm = props => {
             />
             <br></br>
             <br></br>
-            <button className="md-button form-button">Update</button>
+            <input
+              type="string"
+              name="stars"
+              onChange={changeHandler}
+              placeholder="Stars"
+              value={stars}
+            />
+            <button className="md-button form-button">Add</button>
           </form>
         </div>
     );
 }
 
-export default UpdateForm;
+export default AddMovie;
